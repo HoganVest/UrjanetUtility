@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Operations Version="1.0" xmlns="http://schemas.microsoft.com/sqlserver/dac/Serialization/2012/02">
+  <Operation Name="Rename Refactor" Key="f77aec1b-c79c-4325-bfbf-86b479e9b9e9" ChangeDateTime="10/12/2020 06:23:07">
+    <Property Name="ElementName" Value="[dbo].[UrjanetStatements].[Id]" />
+    <Property Name="ElementType" Value="SqlSimpleColumn" />
+    <Property Name="ParentElementName" Value="[dbo].[UrjanetStatements]" />
+    <Property Name="ParentElementType" Value="SqlTable" />
+    <Property Name="NewName" Value="Logical Account Id" />
+  </Operation>
+</Operations>

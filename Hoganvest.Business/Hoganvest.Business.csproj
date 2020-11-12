@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="10.0.0" />
+    <PackageReference Include="Google.Apis.Drive.v2" Version="1.49.0.2117" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.49.0.2117" />
+    <PackageReference Include="KoenZomers.OneDrive.Api" Version="2.3.1" />
+    <PackageReference Include="LinqKit" Version="1.1.17" />
+    <PackageReference Include="Microsoft.AspNet.WebPages" Version="3.2.7" />
+    <PackageReference Include="Microsoft.Graph" Version="3.19.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.22.0" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hoganvest.Core\Hoganvest.Core.csproj" />
+    <ProjectReference Include="..\Hoganvest.Data\Hoganvest.Data.csproj" />
+  </ItemGroup>
+
+</Project>
