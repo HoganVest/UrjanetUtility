@@ -22,7 +22,8 @@
     {
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
-        public string FolderId { get; set; }
+        public string StructureFolderId { get; set; }
+        public string HoganvestFolderId { get; set; }
     }
     public class OneDriveDetails
     {

@@ -113,10 +113,21 @@ namespace Hoganvest.Business
                                 {
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
                                     string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
-                                    SaveFileOnGoogleDrive(filePath);
+                                    SaveFileOnGoogleDrive(filePath,_googleDriveDetails.StructureFolderId);
                                     Console.WriteLine("Uploaded to google drive successfully");
                                     System.IO.File.Delete(filePath);
                                 }
+                            }
+                        }
+                        else if(row[dt.Columns["\"Correlation_Id\""]].ToString() == "Hoganvest")
+                        {
+                            if (!string.IsNullOrEmpty(row[col].ToString()))
+                            {
+                                UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
+                                string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
+                                SaveFileOnGoogleDrive(filePath,_googleDriveDetails.HoganvestFolderId);
+                                Console.WriteLine("Uploaded to google drive successfully");
+                                System.IO.File.Delete(filePath);
                             }
                         }
                         else
@@ -253,7 +264,7 @@ namespace Hoganvest.Business
             }
             return res;
         }
-        private bool SaveFileOnGoogleDrive(string url)
+        private bool SaveFileOnGoogleDrive(string url, string folderId)
         {
             string[] scopes = new string[] { DriveService.Scope.Drive,
                           DriveService.Scope.DriveAppdata,
@@ -284,7 +295,7 @@ namespace Hoganvest.Business
                 ApplicationName = "CTM",
             });
 
-            uploadFile(service, url, _googleDriveDetails.FolderId, "");
+            uploadFile(service, url, folderId, "");
             return true;
         }
         private static void uploadFile(DriveService _service, string _uploadFile, string _parent, string _descrp)
