@@ -113,21 +113,24 @@ namespace Hoganvest.Business
                                 {
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
                                     string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
-                                    SaveFileOnGoogleDrive(filePath,_googleDriveDetails.StructureFolderId);
+                                    SaveFileOnGoogleDrive(filePath, _googleDriveDetails.StructureFolderId);
                                     Console.WriteLine("Uploaded to google drive successfully");
                                     System.IO.File.Delete(filePath);
                                 }
                             }
                         }
-                        else if(row[dt.Columns["\"Correlation_Id\""]].ToString() == "Hoganvest")
+                        else if (row[dt.Columns["\"Correlation_Id\""]].ToString() == "Hoganvest")
                         {
-                            if (!string.IsNullOrEmpty(row[col].ToString()))
+                            if (col.ColumnName.Replace('"', ' ').Trim() == "Statement_Id")
                             {
-                                UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                                string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
-                                SaveFileOnGoogleDrive(filePath,_googleDriveDetails.HoganvestFolderId);
-                                Console.WriteLine("Uploaded to google drive successfully");
-                                System.IO.File.Delete(filePath);
+                                if (!string.IsNullOrEmpty(row[col].ToString()))
+                                {
+                                    UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
+                                    string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
+                                    SaveFileOnGoogleDrive(filePath, _googleDriveDetails.HoganvestFolderId);
+                                    Console.WriteLine("Uploaded to google drive successfully");
+                                    System.IO.File.Delete(filePath);
+                                }
                             }
                         }
                         else
@@ -136,10 +139,9 @@ namespace Hoganvest.Business
                             {
                                 if (!string.IsNullOrEmpty(row[col].ToString()))
                                 {
-                                    {
-                                        UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                                        await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime);
-                                    }
+                                    UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
+                                    await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime);
+
                                 }
                             }
                         }
