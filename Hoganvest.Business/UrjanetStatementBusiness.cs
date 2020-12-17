@@ -97,7 +97,7 @@ namespace Hoganvest.Business
                         //        }
                         //    }
                         //}
-                        if (row[dt.Columns["\"Correlation_Id\""]].ToString() == "Structure")
+                        if (row[dt.Columns["\"Correlation_Id\""]].ToString().ToLower() == "structure")
                         {
                             if (col.ColumnName.Replace('"', ' ').Trim() == "Raw_Account_Number")
                             {
@@ -119,7 +119,7 @@ namespace Hoganvest.Business
                                 }
                             }
                         }
-                        else if (row[dt.Columns["\"Correlation_Id\""]].ToString() == "Hoganvest")
+                        else if (row[dt.Columns["\"Correlation_Id\""]].ToString().ToLower() == "hoganvest")
                         {
                             if (col.ColumnName.Replace('"', ' ').Trim() == "Statement_Id")
                             {
