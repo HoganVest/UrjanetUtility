@@ -21,31 +21,38 @@ namespace Hoganvest.Core.Helpers
             _urjanetDetails = urjanetDetails;
             _token = token;
         }
-        public async ValueTask<(DataTable,DateTime)> StatementResponse(string search)
+        public async ValueTask<(DataTable, DateTime)> StatementResponse(string search)
         {
             StatementResponse statementResponse = new StatementResponse();
             DataTable dt = new DataTable();
             try
             {
-               TokenResponse tokenResponse = await connectUrjanet();
+                TokenResponse tokenResponse = await connectUrjanet();
                 if (!string.IsNullOrEmpty(_token))
                 {
                     using (var client = new HttpClient())
                     {
                         client.BaseAddress = new Uri(_urjanetDetails.BaseAddress);
-                        client.DefaultRequestHeaders.Add("Authorization", "Bearer "+ _token);
+                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
                         search = search + DateTime.Now.ToString("yyyy-MM-dd"); // This to get the complete data from begining new DateTime(1900, 1, 1).ToString("yyyy-MM-dd");
                         var data = new { search = search };
                         StringContent content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
+                        Console.WriteLine("Statement Request Data: " + data);
                         var result = await client.PostAsync("apautomation/statements/downloads", content);
                         result.EnsureSuccessStatusCode();
-                        
+
                         string resultContent = await result.Content.ReadAsStringAsync();
+                        Console.WriteLine("Statement Response Data: " + resultContent);
                         statementResponse = JsonConvert.DeserializeObject<StatementResponse>(resultContent);
+
                     }
-                    if(statementResponse != null && statementResponse._links != null && statementResponse._links.download != null && statementResponse._links.download.href != null)
+                    if (statementResponse != null && statementResponse._links != null && statementResponse._links.download != null && statementResponse._links.download.href != null)
                     {
-                      dt = await ReadFile(statementResponse);
+                        dt = await ReadFile(statementResponse);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Statement Response does not contain  href details");
                     }
                 }
             }
@@ -54,7 +61,7 @@ namespace Hoganvest.Core.Helpers
                 Console.WriteLine(ex.Message);
                 throw ex;
             }
-            return (dt,statementResponse.createdDate);
+            return (dt, statementResponse.createdDate);
         }
         public async ValueTask<DataTable> ReadFile(StatementResponse StatementResponse)
         {
@@ -67,7 +74,8 @@ namespace Hoganvest.Core.Helpers
                     using (var client = new HttpClient())
                     {
                         client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
-                        StamentDownload: Stream stream = await client.GetStreamAsync(StatementResponse._links.download.href);
+                    StamentDownload: Stream stream = await client.GetStreamAsync(StatementResponse._links.download.href);
+                        Console.WriteLine("Fetching Statements Details from Urjanet API for " + times + "time(s)");
                         using (var sr = new StreamReader(stream))
                         {
                             string line = sr.ReadLine();
@@ -122,13 +130,13 @@ namespace Hoganvest.Core.Helpers
                     tokenResponse = JsonConvert.DeserializeObject<TokenResponse>(resultContent);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw ex;
             }
             return tokenResponse;
         }
-       
+
         public async ValueTask<string> DownEachStatement(string statementOrInvoiceId, DateTime dateTime, bool tempPath = false)
         {
             bool res = false;
@@ -141,7 +149,7 @@ namespace Hoganvest.Core.Helpers
                     string pathCheck = Path.Combine(_urjanetDetails.StatementPath, dateTime.ToString("yyyy-MM-dd"), statementOrInvoiceId + ".pdf");
                     if (File.Exists(pathCheck))
                     {
-                        Console.WriteLine("Statement - "+ statementOrInvoiceId + " already exists in - " + pathCheck);
+                        Console.WriteLine("Statement - " + statementOrInvoiceId + " already exists in - " + pathCheck);
                         res = false;
                     }
                     else
@@ -156,13 +164,13 @@ namespace Hoganvest.Core.Helpers
                             string folderName = dateTime.ToString("yyyy-MM-dd");
                             string desPath = string.Empty;
                             if (!tempPath)
-                                 desPath = Path.Combine(_urjanetDetails.StatementPath, folderName);
+                                desPath = Path.Combine(_urjanetDetails.StatementPath, folderName);
                             else
                                 desPath = Path.Combine(_urjanetDetails.TempPath, folderName);
                             Directory.CreateDirectory(desPath);
                             desPath = Path.Combine(desPath, statementOrInvoiceId + ".pdf");
                             using (var file = System.IO.File.Create(desPath))
-                            { 
+                            {
                                 var contentStream = await content.ReadAsStreamAsync(); // get the actual content stream
                                 await contentStream.CopyToAsync(file); // copy that stream to the file stream
                                 Console.WriteLine("Statement - " + statementOrInvoiceId + " downloaded in - " + desPath);
@@ -171,11 +179,10 @@ namespace Hoganvest.Core.Helpers
                                 pathFile = desPath;
                             }
                         }
-
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine("Error :" + ex.Message.ToString());
                 throw ex;

@@ -57,7 +57,8 @@ namespace Hoganvest.Business
             catch (Exception ex)
             {
                 response.IsSuccess = false;
-                response.Messages.Add(ex.InnerException.ToString());
+                response.Messages.Add(ex.Message.ToString());
+                Console.WriteLine("Error :" + ex.Message.ToString());
             }
             return response;
         }
@@ -72,31 +73,6 @@ namespace Hoganvest.Business
                 {
                     foreach (DataColumn col in dt.Columns)
                     {
-                        //check if corelation id is hoganvest, download all and upload to one drive
-                        //if (row[dt.Columns["\"Correlation_Id\""]].ToString() == "Hoganvest")
-                        //{
-                        //    if (col.ColumnName.Replace('"', ' ').Trim() == "Statement_Id")
-                        //    {
-                        //        if (!string.IsNullOrEmpty(row[col].ToString()))
-                        //        {
-                        //            {
-                        //                UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                        //                string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
-                        //                if (!string.IsNullOrEmpty(filePath))
-                        //                {
-                        //                    var oneDrive = new OneDriveGraphApi("e208a66b-6ef1-4ed2-bdbb-eeb6680ca4fa");
-                        //                    oneDrive.ProxyConfiguration = System.Net.WebRequest.DefaultWebProxy;
-                        //                    var v = await oneDrive.GetDriveRoot();
-                        //                    await oneDrive.UploadFile(filePath, v);
-                        //                    //await OneDriveUpload(filePath);
-                        //                    System.IO.File.Delete(filePath);
-                        //                    //byte[] b = System.IO.File.ReadAllBytes(filePath);
-                        //                    //UploadFileBySession(ondriveUrl, b);
-                        //                }
-                        //            }
-                        //        }
-                        //    }
-                        //}
                         if (row[dt.Columns["\"Correlation_Id\""]].ToString().ToLower() == "structure")
                         {
                             if (col.ColumnName.Replace('"', ' ').Trim() == "Raw_Account_Number")
@@ -165,7 +141,7 @@ namespace Hoganvest.Business
             {
                 UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
                 var result = await urjanetHelper.StatementResponse(_urjanetDetails.Search);
-                if (result.Item1 != null && result.Item1.Rows.Count > 0 && result.Item2 != null)
+                if (result.Item1.Rows.Count > 0)
                 {
                     Console.WriteLine("Successfully accessed statement");
                     Console.WriteLine("Adding statement to database started.......");
@@ -180,11 +156,16 @@ namespace Hoganvest.Business
                             await DownEachStatement(dt, result.Item2, token);
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine("No new statements found");
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("Statement not found for given search - " + _urjanetDetails.Search);
+                    Console.WriteLine("No statements found with search criteria");
                 }
+
             }
             catch (Exception ex)
             {
@@ -240,21 +221,21 @@ namespace Hoganvest.Business
                 {
                     foreach (DataRow row in dt.Rows)
                     {
-                        foreach (DataColumn col in dt.Columns)
-                        {
-                            if (col.ColumnName.Replace('"', ' ').Trim() == "Statement_Id")
-                            {
-                                if (!string.IsNullOrEmpty(row[col].ToString()))
+                        //foreach (DataColumn col in dt.Columns)
+                        //{
+                            //if (col.ColumnName.Replace('"', ' ').Trim() == "Statement_Id")
+                            //{
+                                if (!string.IsNullOrEmpty(row["Statement_Id"].ToString()))
                                 {
-                                    DataRow[] dr = dbTable.Select("[Statement_Id] ='" + row[col].ToString() + "'");
+                                    DataRow[] dr = dbTable.Select("[Statement_Id] ='" + row["Statement_Id"].ToString() + "'");
                                     if (dr.Length == 0)
                                     {
                                         res.Rows.Add(row.ItemArray);
                                         break;
                                     }
                                 }
-                            }
-                        }
+                           // }
+                        //}
                     }
                 }
                 else
