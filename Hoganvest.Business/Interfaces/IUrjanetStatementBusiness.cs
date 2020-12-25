@@ -5,7 +5,7 @@ namespace Hoganvest.Business.Interfaces
 {
     public interface IUrjanetStatementBusiness
     {
-        ValueTask<Response> AddStatement(string token);
+        ValueTask<Response> AddStatement(string token, string[] args);
         ValueTask<string> getToken();
     }
 }

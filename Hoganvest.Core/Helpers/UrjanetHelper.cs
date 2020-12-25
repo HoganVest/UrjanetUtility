@@ -21,7 +21,7 @@ namespace Hoganvest.Core.Helpers
             _urjanetDetails = urjanetDetails;
             _token = token;
         }
-        public async ValueTask<(DataTable, DateTime)> StatementResponse(string search)
+        public async ValueTask<(DataTable, DateTime)> StatementResponse(string search, string[] args)
         {
             StatementResponse statementResponse = new StatementResponse();
             DataTable dt = new DataTable();
@@ -34,7 +34,22 @@ namespace Hoganvest.Core.Helpers
                     {
                         client.BaseAddress = new Uri(_urjanetDetails.BaseAddress);
                         client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
-                        search = search + DateTime.Now.ToString("yyyy-MM-dd"); // This to get the complete data from begining new DateTime(1900, 1, 1).ToString("yyyy-MM-dd");
+                        if (args != null && args.Length > 0)
+                        {
+                            DateTime statementDate;
+                            if (DateTime.TryParse(args[0], out statementDate))
+                            {
+                                search = search + statementDate.ToString("yyyy-MM-dd");
+                            }
+                            else
+                            {
+                                search = search + DateTime.Now.ToString("yyyy-MM-dd");
+                            }
+                        }
+                        else
+                        {
+                            search = search + DateTime.Now.ToString("yyyy-MM-dd"); // This to get the complete data from begining new DateTime(1900, 1, 1).ToString("yyyy-MM-dd");
+                        }
                         var data = new { search = search };
                         StringContent content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
                         Console.WriteLine("Statement Request Data: " + data);
@@ -75,7 +90,7 @@ namespace Hoganvest.Core.Helpers
                     {
                         client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
                     StamentDownload: Stream stream = await client.GetStreamAsync(StatementResponse._links.download.href);
-                        Console.WriteLine("Fetching Statements Details from Urjanet API for " + times + "time(s)");
+                        Console.WriteLine("Fetching Statements Details from Urjanet API for " + times + " time(s)");
                         using (var sr = new StreamReader(stream))
                         {
                             string line = sr.ReadLine();
@@ -94,6 +109,8 @@ namespace Hoganvest.Core.Helpers
                                     for (int i = 0; i < headers.Length; i++)
                                     {
                                         string data = rows[i].Replace('"', ' ').Trim();
+                                        if (string.IsNullOrEmpty(data))
+                                            data = null;
                                         dr[i] = data;
                                     }
                                     dt.Rows.Add(dr);

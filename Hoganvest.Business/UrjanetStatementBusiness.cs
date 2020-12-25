@@ -52,6 +52,7 @@ namespace Hoganvest.Business
                     }
                     destinationConnection.Close();
                     response.IsSuccess = true;
+                    Console.WriteLine("Inserted " + urjanetStatementsDto.Rows.Count + " statement details in database");
                 }
             }
             catch (Exception ex)
@@ -69,6 +70,7 @@ namespace Hoganvest.Business
             try
             {
                 int i = dt.Rows.Count;
+                int hoganvestStatementsUploadCount = 0, structureStatementsUploadCount = 0, localFilesDownloadCount = 0;
                 foreach (DataRow row in dt.Rows)
                 {
                     foreach (DataColumn col in dt.Columns)
@@ -91,6 +93,7 @@ namespace Hoganvest.Business
                                     string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
                                     SaveFileOnGoogleDrive(filePath, _googleDriveDetails.StructureFolderId);
                                     Console.WriteLine("Uploaded to google drive successfully");
+                                    structureStatementsUploadCount++;
                                     System.IO.File.Delete(filePath);
                                 }
                             }
@@ -105,6 +108,7 @@ namespace Hoganvest.Business
                                     string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
                                     SaveFileOnGoogleDrive(filePath, _googleDriveDetails.HoganvestFolderId);
                                     Console.WriteLine("Uploaded to google drive successfully");
+                                    hoganvestStatementsUploadCount++;
                                     System.IO.File.Delete(filePath);
                                 }
                             }
@@ -117,12 +121,15 @@ namespace Hoganvest.Business
                                 {
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
                                     await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime);
-
+                                    localFilesDownloadCount++;
                                 }
                             }
                         }
                     }
                 }
+                Console.WriteLine("Uploaded " + hoganvestStatementsUploadCount + " hoganvest statements to google drive folder");
+                Console.WriteLine("Uploaded " + structureStatementsUploadCount + " structure statements to google drive folder");
+                Console.WriteLine("Uploaded " + localFilesDownloadCount + " statements to local file system");
                 response.IsSuccess = true;
             }
             catch (Exception ex)
@@ -132,7 +139,7 @@ namespace Hoganvest.Business
             }
             return response;
         }
-        public async ValueTask<Response> AddStatement(string token)
+        public async ValueTask<Response> AddStatement(string token, string[] args)
         {
             Console.WriteLine("Accessing statement started.....");
             DataTable dt = new DataTable();
@@ -140,7 +147,7 @@ namespace Hoganvest.Business
             try
             {
                 UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                var result = await urjanetHelper.StatementResponse(_urjanetDetails.Search);
+                var result = await urjanetHelper.StatementResponse(_urjanetDetails.Search, args);
                 if (result.Item1.Rows.Count > 0)
                 {
                     Console.WriteLine("Successfully accessed statement");
@@ -221,21 +228,14 @@ namespace Hoganvest.Business
                 {
                     foreach (DataRow row in dt.Rows)
                     {
-                        //foreach (DataColumn col in dt.Columns)
-                        //{
-                            //if (col.ColumnName.Replace('"', ' ').Trim() == "Statement_Id")
-                            //{
-                                if (!string.IsNullOrEmpty(row["Statement_Id"].ToString()))
-                                {
-                                    DataRow[] dr = dbTable.Select("[Statement_Id] ='" + row["Statement_Id"].ToString() + "'");
-                                    if (dr.Length == 0)
-                                    {
-                                        res.Rows.Add(row.ItemArray);
-                                        break;
-                                    }
-                                }
-                           // }
-                        //}
+                        if (!string.IsNullOrEmpty(row["\"Statement_Id\""].ToString()))
+                        {
+                            DataRow[] dr = dbTable.Select("[Statement_Id] ='" + row["\"Statement_Id\""].ToString() + "'");
+                            if (dr.Length == 0)
+                            {
+                                res.Rows.Add(row.ItemArray);
+                            }
+                        }
                     }
                 }
                 else

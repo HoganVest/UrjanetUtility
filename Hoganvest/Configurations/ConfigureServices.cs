@@ -75,9 +75,9 @@ namespace Hoganvest.App.Configurations
             try
             {
                 var urjanetStatementBusiness = _serviceProvider.GetService<IUrjanetStatementBusiness>();
-               _token = await urjanetStatementBusiness.getToken();
+                _token = await urjanetStatementBusiness.getToken();
                 if (!string.IsNullOrEmpty(_token))
-                     await urjanetStatementBusiness.AddStatement(_token);
+                    await urjanetStatementBusiness.AddStatement(_token, args);
             }
             catch (Exception ex)
             {
