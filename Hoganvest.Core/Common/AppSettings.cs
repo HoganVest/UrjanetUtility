@@ -14,6 +14,7 @@
         public string BaseAddress { get; set; }
         public string TableName { get; set; }
         public int ResponseFailureRetriveCount { get; set; }
+        public int StatementResponseWaitTime { get; set; }
         public bool OnOffPDFDownloads { get; set; }
         public bool IsLocalCopyMaintain { get; set; }
         public string AccountNumbers { get; set; }

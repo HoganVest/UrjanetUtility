@@ -7,6 +7,7 @@ using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Hoganvest.Core.Helpers
@@ -91,6 +92,7 @@ namespace Hoganvest.Core.Helpers
                         client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
                     StamentDownload: Stream stream = await client.GetStreamAsync(StatementResponse._links.download.href);
                         Console.WriteLine("Fetching Statements Details from Urjanet API for " + times + " time(s)");
+                        Thread.Sleep(_urjanetDetails.StatementResponseWaitTime);
                         using (var sr = new StreamReader(stream))
                         {
                             string line = sr.ReadLine();
