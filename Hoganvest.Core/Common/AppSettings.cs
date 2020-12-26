@@ -18,6 +18,7 @@
         public bool IsLocalCopyMaintain { get; set; }
         public string AccountNumbers { get; set; }
         public string TempPath { get; set; }
+        public int StatementDaysDownload { get; set; }
     }
     public class GoogleDriveDetails
     {

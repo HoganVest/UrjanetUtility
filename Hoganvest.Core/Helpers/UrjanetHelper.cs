@@ -43,12 +43,12 @@ namespace Hoganvest.Core.Helpers
                             }
                             else
                             {
-                                search = search + DateTime.Now.ToString("yyyy-MM-dd");
+                                search = search + DateTime.Now.Date.AddDays(_urjanetDetails.StatementDaysDownload).ToString("yyyy-MM-dd");
                             }
                         }
                         else
                         {
-                            search = search + DateTime.Now.ToString("yyyy-MM-dd"); // This to get the complete data from begining new DateTime(1900, 1, 1).ToString("yyyy-MM-dd");
+                            search = search + DateTime.Now.Date.AddDays(_urjanetDetails.StatementDaysDownload).ToString("yyyy-MM-dd");
                         }
                         var data = new { search = search };
                         StringContent content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
