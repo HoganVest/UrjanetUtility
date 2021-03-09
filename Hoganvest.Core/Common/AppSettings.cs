@@ -18,7 +18,6 @@
         public bool OnOffPDFDownloads { get; set; }
         public bool IsLocalCopyMaintain { get; set; }
         public string AccountNumbers { get; set; }
-        public string TempPath { get; set; }
         public int StatementDaysDownload { get; set; }
     }
     public class GoogleDriveDetails
@@ -39,6 +38,8 @@
     public class ConnectionStrings
     {
         public string HoganvestDBString { get; set; }
+        public string AccountReceivableDBString { get; set; }
+
     }
     public class MailSettings
     {

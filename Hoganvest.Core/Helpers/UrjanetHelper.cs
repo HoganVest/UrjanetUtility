@@ -156,46 +156,37 @@ namespace Hoganvest.Core.Helpers
             return tokenResponse;
         }
 
-        public async ValueTask<string> DownEachStatement(string statementOrInvoiceId, DateTime dateTime, bool tempPath = false)
+        public async ValueTask<bool> DownloadStatemet(string statementId, string fileName, string companyName)
         {
-            bool res = false;
-            string pathFile = string.Empty;
+            bool isdownloaded = false;
             try
             {
                 if (!string.IsNullOrEmpty(_token))
                 {
-                    statementOrInvoiceId = statementOrInvoiceId.Replace('"', ' ').Trim();
-                    string pathCheck = Path.Combine(_urjanetDetails.StatementPath, dateTime.ToString("yyyy-MM-dd"), statementOrInvoiceId + ".pdf");
-                    if (File.Exists(pathCheck))
+                    statementId = statementId.Replace('"', ' ').Trim();
+                    string filePath = Path.Combine(_urjanetDetails.StatementPath, companyName, fileName + ".pdf");
+                    if (File.Exists(filePath))
                     {
-                        Console.WriteLine("Statement - " + statementOrInvoiceId + " already exists in - " + pathCheck);
-                        res = false;
+                        Console.WriteLine("Statement - " + fileName + " already exists in - " + filePath);
+                        isdownloaded = false;
                     }
                     else
                     {
-                        Console.WriteLine("Downloading statement for statementid - " + statementOrInvoiceId + " started");
+                        Console.WriteLine("Downloading statement for statementid - " + statementId + " started");
                         using (var client = new HttpClient())
                         {
                             client.BaseAddress = new Uri(_urjanetDetails.BaseAddress);
                             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
-                            var str = await client.GetAsync("apautomation/statements/" + statementOrInvoiceId + "/source");
+                            var str = await client.GetAsync("apautomation/statements/" + statementId + "/source");
                             System.Net.Http.HttpContent content = str.Content; // actually a System.Net.Http.StreamContent instance but you do not need to cast as the actual type does not matter in this case
-                            string folderName = dateTime.ToString("yyyy-MM-dd");
-                            string desPath = string.Empty;
-                            if (!tempPath)
-                                desPath = Path.Combine(_urjanetDetails.StatementPath, folderName);
-                            else
-                                desPath = Path.Combine(_urjanetDetails.TempPath, folderName);
-                            Directory.CreateDirectory(desPath);
-                            desPath = Path.Combine(desPath, statementOrInvoiceId + ".pdf");
-                            using (var file = System.IO.File.Create(desPath))
+
+                            using (var file = System.IO.File.Create(filePath))
                             {
                                 var contentStream = await content.ReadAsStreamAsync(); // get the actual content stream
                                 await contentStream.CopyToAsync(file); // copy that stream to the file stream
-                                Console.WriteLine("Statement - " + statementOrInvoiceId + " downloaded in - " + desPath);
-                                Console.WriteLine("Downloading statement for statementid - " + statementOrInvoiceId + " completed");
-                                res = true;
-                                pathFile = desPath;
+                                Console.WriteLine("Statement - " + fileName + " downloaded in - " + filePath);
+                                Console.WriteLine("Downloading statement for statementid - " + fileName + " completed");
+                                isdownloaded = true;
                             }
                         }
                     }
@@ -206,7 +197,7 @@ namespace Hoganvest.Core.Helpers
                 Console.WriteLine("Error :" + ex.Message.ToString());
                 throw ex;
             }
-            return pathFile;
+            return isdownloaded;
         }
     }
 }

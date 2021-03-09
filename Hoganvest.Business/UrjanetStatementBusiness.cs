@@ -48,6 +48,7 @@ namespace Hoganvest.Business
                     using (SqlBulkCopy bulkCopy = new SqlBulkCopy(destinationConnection))
                     {
                         bulkCopy.DestinationTableName = _urjanetDetails.TableName;
+                        bulkCopy.BulkCopyTimeout = 0;
                         bulkCopy.WriteToServer(urjanetStatementsDto);
                     }
                     destinationConnection.Close();
@@ -71,6 +72,7 @@ namespace Hoganvest.Business
             {
                 int i = dt.Rows.Count;
                 int hoganvestStatementsUploadCount = 0, structureStatementsUploadCount = 0, localFilesDownloadCount = 0;
+                List<PropertyDirectory> propertyDirectories = GetPropertyDirectories();
                 foreach (DataRow row in dt.Rows)
                 {
                     foreach (DataColumn col in dt.Columns)
@@ -89,12 +91,21 @@ namespace Hoganvest.Business
                             {
                                 if (!string.IsNullOrEmpty(row[col].ToString()))
                                 {
+                                    string fileName = string.Empty;
+                                    if (row["PropertyID"] is DBNull)
+                                    {
+                                        fileName = row[col].ToString().Replace('"', ' ').Trim();
+                                    }
+                                    else
+                                    {
+                                        fileName = GetFileName(propertyDirectories, row);
+                                    }
+
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                                    string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
-                                    SaveFileOnGoogleDrive(filePath, _googleDriveDetails.StructureFolderId);
-                                    Console.WriteLine("Uploaded to google drive successfully");
+                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Structure");
+                                    Console.WriteLine("File Downloaded successfully");
                                     structureStatementsUploadCount++;
-                                    System.IO.File.Delete(filePath);
+                                    
                                 }
                             }
                         }
@@ -104,12 +115,20 @@ namespace Hoganvest.Business
                             {
                                 if (!string.IsNullOrEmpty(row[col].ToString()))
                                 {
+                                    string fileName = string.Empty;
+                                    if (row["PropertyID"] is DBNull)
+                                    {
+                                        fileName = row[col].ToString().Replace('"', ' ').Trim();
+                                    }
+                                    else
+                                    {
+                                        fileName = GetFileName(propertyDirectories, row);
+                                    }
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                                    string filePath = await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime, true);
-                                    SaveFileOnGoogleDrive(filePath, _googleDriveDetails.HoganvestFolderId);
-                                    Console.WriteLine("Uploaded to google drive successfully");
+                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Hoganvest");
+                                    Console.WriteLine("File Downloaded successfully");
                                     hoganvestStatementsUploadCount++;
-                                    System.IO.File.Delete(filePath);
+                                   
                                 }
                             }
                         }
@@ -119,9 +138,20 @@ namespace Hoganvest.Business
                             {
                                 if (!string.IsNullOrEmpty(row[col].ToString()))
                                 {
+                                    string fileName = string.Empty;
+                                    if (row["PropertyID"] is DBNull)
+                                    {
+                                        fileName = row[col].ToString().Replace('"', ' ').Trim();
+                                    }
+                                    else
+                                    {
+                                        fileName = GetFileName(propertyDirectories, row);
+                                    }
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                                    await urjanetHelper.DownEachStatement((row[col].ToString()), dateTime);
+                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Default");
+                                    Console.WriteLine("File Downloaded successfully");
                                     localFilesDownloadCount++;
+                                   
                                 }
                             }
                         }
@@ -375,6 +405,66 @@ namespace Hoganvest.Business
                 //throw ex;
             }
             return true;
+        }
+
+        private List<PropertyDirectory> GetPropertyDirectories()
+        {
+            List<PropertyDirectory> propertyDirectories = null;
+            DataTable dataTable = new DataTable();
+            try
+            {
+                using (var sqlConnection = new SqlConnection(_connectionStrings.AccountReceivableDBString))
+                {
+                    sqlConnection.Open();
+                    {
+                        SqlDataAdapter da = new SqlDataAdapter(("select PropertyId,PropertyName,PropertyAddress from PropertyDirectory order by PropertyId"), sqlConnection);
+                        da.Fill(dataTable);
+                    }
+                    sqlConnection.Close();
+                }
+                if (dataTable != null && dataTable.Rows.Count > 0)
+                {
+                    propertyDirectories = new List<PropertyDirectory>();
+                    propertyDirectories = (from DataRow dr in dataTable.Rows
+                                           select new PropertyDirectory()
+                                           {
+                                               PropertyId = Convert.ToInt32(dr["PropertyId"]),
+                                               PropertyName = dr["PropertyName"].ToString(),
+                                               PropertyAddress = dr["PropertyAddress"].ToString()
+                                           }).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return propertyDirectories;
+        }
+
+        private string GetFileName(List<PropertyDirectory> propertyDirectories, DataRow dataRow)
+        {
+            string fileName;
+            try
+            {
+                string delimeter = "_";
+                string propertyName = propertyDirectories.FirstOrDefault(i => i.PropertyId == Convert.ToInt32(dataRow["PropertyID"]))?.PropertyName;
+                if (!string.IsNullOrEmpty(propertyName))
+                    propertyName = propertyName.Replace("/", " ") + delimeter;
+                string providerName = dataRow["\"Provider_Name\""].ToString() + delimeter;
+                string rawAccountNumber = dataRow["\"Raw_Account_Number\""].ToString() + delimeter;
+                DateTime statementDate = Convert.ToDateTime(dataRow["\"Statement_Date\""]);
+                string statementMonth = statementDate.ToString("MM") + delimeter;
+                string statementyear = statementDate.ToString("yy") + delimeter;
+                string amount = dataRow["\"Total_due\""].ToString();
+                fileName = propertyName + statementMonth + statementyear + providerName + rawAccountNumber + amount;
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return fileName;
+
         }
 
         #endregion
