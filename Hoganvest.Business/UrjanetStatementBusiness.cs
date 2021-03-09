@@ -105,7 +105,7 @@ namespace Hoganvest.Business
                                     bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Structure");
                                     Console.WriteLine("File Downloaded successfully");
                                     structureStatementsUploadCount++;
-                                    
+
                                 }
                             }
                         }
@@ -128,7 +128,7 @@ namespace Hoganvest.Business
                                     bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Hoganvest");
                                     Console.WriteLine("File Downloaded successfully");
                                     hoganvestStatementsUploadCount++;
-                                   
+
                                 }
                             }
                         }
@@ -151,7 +151,7 @@ namespace Hoganvest.Business
                                     bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Default");
                                     Console.WriteLine("File Downloaded successfully");
                                     localFilesDownloadCount++;
-                                   
+
                                 }
                             }
                         }
@@ -451,7 +451,8 @@ namespace Hoganvest.Business
                 if (!string.IsNullOrEmpty(propertyName))
                     propertyName = propertyName.Replace("/", " ") + delimeter;
                 string providerName = dataRow["\"Provider_Name\""].ToString() + delimeter;
-                string rawAccountNumber = dataRow["\"Raw_Account_Number\""].ToString() + delimeter;
+                string rawAccountNumber = dataRow["\"Raw_Account_Number\""].ToString();
+                rawAccountNumber = rawAccountNumber.Replace("-", "").Replace(" ","") + delimeter;
                 DateTime statementDate = Convert.ToDateTime(dataRow["\"Statement_Date\""]);
                 string statementMonth = statementDate.ToString("MM") + delimeter;
                 string statementyear = statementDate.ToString("yy") + delimeter;
