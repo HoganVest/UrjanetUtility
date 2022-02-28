@@ -13,8 +13,9 @@ namespace Hoganvest.Data.Repository.Models
         {
         }
 
+        public virtual DbSet<CrdentialDetails> CrdentialDetails { get; set; }
+        public virtual DbSet<Credential> Credential { get; set; }
         public virtual DbSet<UrjanetStatements> UrjanetStatements { get; set; }
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
@@ -26,6 +27,58 @@ namespace Hoganvest.Data.Repository.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<CrdentialDetails>(entity =>
+            {
+                entity.HasKey(e => e.CreentialDetailsId)
+                    .HasName("PK__Crdentia__1B4D67B5CA456128");
+
+                entity.Property(e => e.AccountNumber)
+                    .HasColumnName("Account Number")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.AccountStatus)
+                    .HasColumnName("Account Status")
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.PropertyId).HasMaxLength(100);
+
+                entity.HasOne(d => d.Crdential)
+                    .WithMany(p => p.CrdentialDetails)
+                    .HasForeignKey(d => d.CrdentialId)
+                    .HasConstraintName("FK__Crdential__Crden__4BAC3F29");
+            });
+
+            modelBuilder.Entity<Credential>(entity =>
+            {
+                entity.HasKey(e => e.CrdentialId)
+                    .HasName("PK_UrjanetCredentials");
+
+                entity.Property(e => e.CorrelationId).HasMaxLength(100);
+
+                entity.Property(e => e.Created).HasColumnType("date");
+
+                entity.Property(e => e.CreatedBy).HasMaxLength(100);
+
+                entity.Property(e => e.LastModified).HasColumnType("date");
+
+                entity.Property(e => e.LastModifiedBy).HasMaxLength(100);
+
+                entity.Property(e => e.Password)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ProviderName).HasMaxLength(100);
+
+                entity.Property(e => e.Status).HasMaxLength(100);
+
+                entity.Property(e => e.UserName).HasMaxLength(100);
+
+                entity.Property(e => e.Website)
+                    .HasColumnName("website")
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+            });
             modelBuilder.Entity<UrjanetStatements>(entity =>
             {
                 entity.HasKey(e => e.LogicalAccountId)

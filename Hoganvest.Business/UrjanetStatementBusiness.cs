@@ -5,6 +5,8 @@ using Google.Apis.Util.Store;
 using Hoganvest.Business.Interfaces;
 using Hoganvest.Core.Common;
 using Hoganvest.Core.Helpers;
+using Hoganvest.Data.Interfaces;
+using Hoganvest.Data.Repository.Models;
 using Hoganvest.Model.Responses;
 using Microsoft.Graph;
 using Microsoft.Identity.Client;
@@ -27,13 +29,15 @@ namespace Hoganvest.Business
         private readonly ConnectionStrings _connectionStrings;
         private readonly GoogleDriveDetails _googleDriveDetails;
         private readonly OneDriveDetails _oneDriveDetails;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public UrjanetStatementBusiness(UrjanetDetails urjanetDetails, ConnectionStrings connectionStrings, GoogleDriveDetails googleDriveDetails, OneDriveDetails oneDriveDetails)
+        public UrjanetStatementBusiness(UrjanetDetails urjanetDetails, ConnectionStrings connectionStrings, GoogleDriveDetails googleDriveDetails, OneDriveDetails oneDriveDetails, IUnitOfWork unitOfWork)
         {
             _urjanetDetails = urjanetDetails;
             _connectionStrings = connectionStrings;
             _googleDriveDetails = googleDriveDetails;
             _oneDriveDetails = oneDriveDetails;
+            _unitOfWork = unitOfWork;
         }
         private Response AddUrjanetStatments(DataTable urjanetStatementsDto)
         {
@@ -67,26 +71,29 @@ namespace Hoganvest.Business
         private async ValueTask<Response> DownEachStatement(DataTable dt, DateTime dateTime, string token)
         {
             Response response = new Response();
-            List<string> accountNumbers = _urjanetDetails.AccountNumbers.Split(',').ToList();
+            //List<string> accountNumbers = _urjanetDetails.AccountNumbers.Split(',').ToList();
             try
             {
                 int i = dt.Rows.Count;
                 int hoganvestStatementsUploadCount = 0, structureStatementsUploadCount = 0, localFilesDownloadCount = 0;
-                List<PropertyDirectory> propertyDirectories = GetPropertyDirectories();
+                //List<PropertyDirectory> propertyDirectories = GetPropertyDirectories();
+                List<PropertyDirectory> propertyDirectories = new List<PropertyDirectory>();
                 foreach (DataRow row in dt.Rows)
                 {
+                    DateTime dueDate = Convert.ToDateTime(row["\"Due_Date\""]);
+                    string folderName = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(dueDate.Month) + " " + dueDate.Year.ToString();
                     foreach (DataColumn col in dt.Columns)
                     {
                         if (row[dt.Columns["\"Correlation_Id\""]].ToString().ToLower() == "structure")
                         {
-                            if (col.ColumnName.Replace('"', ' ').Trim() == "Raw_Account_Number")
-                            {
-                                var v = accountNumbers.FirstOrDefault(x => x.Contains(row[col].ToString()));
-                                if (v == null)
-                                {
-                                    break;
-                                }
-                            }
+                            //if (col.ColumnName.Replace('"', ' ').Trim() == "Raw_Account_Number")
+                            //{
+                            //    var v = accountNumbers.FirstOrDefault(x => x.Contains(row[col].ToString()));
+                            //    if (v == null)
+                            //    {
+                            //        break;
+                            //    }
+                            //}
                             if (col.ColumnName.Replace('"', ' ').Trim() == "Statement_Id")
                             {
                                 if (!string.IsNullOrEmpty(row[col].ToString()))
@@ -100,9 +107,8 @@ namespace Hoganvest.Business
                                     {
                                         fileName = GetFileName(propertyDirectories, row);
                                     }
-
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Structure");
+                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Structure", folderName);
                                     Console.WriteLine("File Downloaded successfully");
                                     structureStatementsUploadCount++;
 
@@ -125,7 +131,7 @@ namespace Hoganvest.Business
                                         fileName = GetFileName(propertyDirectories, row);
                                     }
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Hoganvest");
+                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Hoganvest", folderName);
                                     Console.WriteLine("File Downloaded successfully");
                                     hoganvestStatementsUploadCount++;
 
@@ -148,7 +154,7 @@ namespace Hoganvest.Business
                                         fileName = GetFileName(propertyDirectories, row);
                                     }
                                     UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
-                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Default");
+                                    bool isDownloaded = await urjanetHelper.DownloadStatemet((row[col].ToString()), fileName, "Default", folderName);
                                     Console.WriteLine("File Downloaded successfully");
                                     localFilesDownloadCount++;
 
@@ -211,7 +217,106 @@ namespace Hoganvest.Business
             }
             return response;
         }
+        public async ValueTask<Response> GetAllCredentials(string token)
+        {
+            Response response = new Response();
+            try
+            {
+                UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
+                int pageNumber = -1;
+                int totalCount = 0;
+                do
+                {
+                    pageNumber++;
+                    var urjanetCredentialsResponse = await urjanetHelper.GetAllCredentials(pageNumber);
+                    if (urjanetCredentialsResponse?._embedded?.credentials?.Count > 0)
+                    {
+                        {
+                            List<Credential> urjanetCredentials = new List<Credential>();
+                            totalCount = urjanetCredentialsResponse.page.totalPages;
 
+                            foreach (var item in urjanetCredentialsResponse._embedded.credentials)
+                            {
+                                var urjanetCredential = _unitOfWork.UrjanetCredentials.SingleOrDefaultAsync(x => x.UserName == item.username && x.ProviderName == item.providerName).Result;
+                                var credentialId = 0;
+                                if (urjanetCredential == null)
+                                {
+                                    string website = string.Empty, password = string.Empty;
+                                    if (!string.IsNullOrEmpty(item._links.provider.href) && !string.IsNullOrEmpty(item._links.provider.href.Split("providers/")[1]))
+                                    {
+                                        website = await urjanetHelper.GetWebsiteByProviderId(item._links.provider.href.Split("providers/")[1]);
+                                    }
+                                    if (!string.IsNullOrEmpty(item._links.passwords.href) && !string.IsNullOrEmpty(item._links.passwords.href.Split("credentials/")[1]))
+                                    {
+                                        string passwordId = item._links.passwords.href.Split("credentials/")[1];
+                                        password = await urjanetHelper.GetPasswordByPasswordId(passwordId.Split("/passwords")[0]);
+                                    }
+                                    Credential credential = new Credential()
+                                    {
+                                        UserName = item.username,
+                                        CorrelationId = item.correlationId,
+                                        Status = item.status,
+                                        StatusDetail = item.statusDetail,
+                                        Enabled = item.enabled,
+                                        Password = password,
+                                        Website = website,
+                                        ProviderName = item.providerName,
+                                        LastModified = item.lastModified,
+                                        Created = item.created,
+                                        CreatedBy = item.createdBy,
+                                        LastModifiedBy = item.lastModifiedBy,
+                                        RunHistory = item.runHistory,
+                                        Mock = item.mock,
+                                    };
+                                    await _unitOfWork.UrjanetCredentials.AddAsync(credential);
+                                    await _unitOfWork.CommitAsync();
+                                    credentialId = credential.CrdentialId;
+                                    if (credentialId > 0)
+                                    {
+                                        if (!string.IsNullOrEmpty(item._links.passwords.href) && !string.IsNullOrEmpty(item._links.passwords.href.Split("credentials/")[1]))
+                                        {
+                                            string accountId = item._links.passwords.href.Split("credentials/")[1];
+                                            var accountsResponse = await urjanetHelper.GetAllAccounts(accountId.Split("/passwords")[0]);
+                                            if (accountsResponse?._embedded?.accounts?.Count > 0)
+                                            {
+                                                List<CrdentialDetails> crdentialDetails = new List<CrdentialDetails>();
+                                                foreach (var account in accountsResponse?._embedded?.accounts)
+                                                {
+                                                    var CrdentialDetails = _unitOfWork.CrdentialDetails.SingleOrDefaultAsync(x => x.AccountNumber == account.accountNumber && x.PropertyId == account._embedded.customData.PropertyID && x.CrdentialId == credentialId).Result;
+                                                    if (CrdentialDetails == null)
+                                                    {
+                                                        crdentialDetails.Add(new CrdentialDetails()
+                                                        {
+                                                            AccountNumber = account.accountNumber,
+                                                            CrdentialId = credentialId,
+                                                            AccountStatus = account.status,
+                                                            PropertyId = account._embedded.customData.PropertyID
+                                                        });
+                                                    }
+                                                }
+                                                if (crdentialDetails.Count > 0)
+                                                {
+                                                    await _unitOfWork.CrdentialDetails.AddRangeAsync(crdentialDetails);
+                                                    await _unitOfWork.CommitAsync();
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                //else
+                                //    credentialId = urjanetCredential.CrdentialId;
+                               
+                            }
+                        }
+                    }
+                } while (pageNumber < totalCount);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return response;
+        }
         public async ValueTask<string> getToken()
         {
             Console.WriteLine("Accessing urjanet token...");
@@ -260,7 +365,7 @@ namespace Hoganvest.Business
                     {
                         if (!string.IsNullOrEmpty(row["\"Statement_Id\""].ToString()))
                         {
-                            DataRow[] dr = dbTable.Select("[Statement_Id] ='" + row["\"Statement_Id\""].ToString() + "'");
+                            DataRow[] dr = dbTable.Select("[Statement Id] ='" + row["\"Statement_Id\""].ToString() + "'");
                             if (dr.Length == 0)
                             {
                                 res.Rows.Add(row.ItemArray);
@@ -406,7 +511,6 @@ namespace Hoganvest.Business
             }
             return true;
         }
-
         private List<PropertyDirectory> GetPropertyDirectories()
         {
             List<PropertyDirectory> propertyDirectories = null;
@@ -440,25 +544,24 @@ namespace Hoganvest.Business
             }
             return propertyDirectories;
         }
-
         private string GetFileName(List<PropertyDirectory> propertyDirectories, DataRow dataRow)
         {
             string fileName;
             try
             {
                 string delimeter = "_";
-                string propertyName = propertyDirectories.FirstOrDefault(i => i.PropertyId == Convert.ToInt32(dataRow["PropertyID"]))?.PropertyName;
-                if (!string.IsNullOrEmpty(propertyName))
-                    propertyName = propertyName.Replace("/", " ") + delimeter;
+                //string propertyName = propertyDirectories.FirstOrDefault(i => i.PropertyId == Convert.ToInt32(dataRow["PropertyID"]))?.PropertyName;
+                //if (!string.IsNullOrEmpty(propertyName))
+                //    propertyName = propertyName.Replace("/", " ") + delimeter;
                 string providerName = dataRow["\"Provider_Name\""].ToString() + delimeter;
                 string rawAccountNumber = dataRow["\"Raw_Account_Number\""].ToString();
                 rawAccountNumber = rawAccountNumber.Replace("-", "").Replace(" ","") + delimeter;
-                DateTime statementDate = Convert.ToDateTime(dataRow["\"Statement_Date\""]);
-                string statementMonth = statementDate.ToString("MM") + delimeter;
-                string statementyear = statementDate.ToString("yy") + delimeter;
-                string amount = dataRow["\"Total_due\""].ToString();
-                fileName = propertyName + statementMonth + statementyear + providerName + rawAccountNumber + amount;
-
+                DateTime dueDate = Convert.ToDateTime(dataRow["\"Due_Date\""]);
+                string dueMonth = dueDate.ToString("MM") + delimeter;
+                string dueYear = dueDate.ToString("yy");
+                string amount = dataRow["\"Total_due\""].ToString() + delimeter;
+                //fileName = propertyName + statementMonth + statementyear + providerName + rawAccountNumber + amount;
+                fileName =  providerName + rawAccountNumber + amount + dueMonth + dueYear;
             }
             catch (Exception ex)
             {

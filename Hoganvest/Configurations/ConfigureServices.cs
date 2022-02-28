@@ -3,6 +3,7 @@ using Hoganvest.Business.Interfaces;
 using Hoganvest.Core.Common;
 using Hoganvest.Data.Interfaces;
 using Hoganvest.Data.Repository.Base;
+using Hoganvest.Data.Repository.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -77,7 +78,10 @@ namespace Hoganvest.App.Configurations
                 var urjanetStatementBusiness = _serviceProvider.GetService<IUrjanetStatementBusiness>();
                 _token = await urjanetStatementBusiness.getToken();
                 if (!string.IsNullOrEmpty(_token))
+                {
+                    await urjanetStatementBusiness.GetAllCredentials(_token);
                     await urjanetStatementBusiness.AddStatement(_token, args);
+                }
             }
             catch (Exception ex)
             {
@@ -107,6 +111,7 @@ namespace Hoganvest.App.Configurations
 
                 _serviceProvider = new ServiceCollection()
                   .AddSingleton<IUnitOfWork, UnitOfWork>()
+                  .AddSingleton<HoganvestContext>()
                   .AddSingleton<IUrjanetStatementBusiness, UrjanetStatementBusiness>()
                   .AddSingleton<IMailBusiness, MailBusiness>()
                   .AddScoped<UrjanetDetails>(svcs => urjanetDetails)

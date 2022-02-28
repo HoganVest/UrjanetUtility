@@ -79,6 +79,108 @@ namespace Hoganvest.Core.Helpers
             }
             return (dt, statementResponse.createdDate);
         }
+
+        public async ValueTask<UrjanetCredentialsResponse> GetAllCredentials(int pageNumber)
+        {
+            UrjanetCredentialsResponse urjanetCredentialsResponse = new UrjanetCredentialsResponse();
+            try
+            {
+                if (!string.IsNullOrEmpty(_token))
+                {
+                    using (var client = new HttpClient())
+                    {
+                        client.BaseAddress = new Uri(_urjanetDetails.BaseAddress);
+                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
+                        var result = await client.GetAsync($"apautomation/credentials?sort=username,asc&size=100&page={pageNumber}& search=mock==false");
+                        string resultContent = await result.Content.ReadAsStringAsync();
+                        result.EnsureSuccessStatusCode();
+                        urjanetCredentialsResponse = JsonConvert.DeserializeObject<UrjanetCredentialsResponse>(resultContent);
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+            return urjanetCredentialsResponse;
+        }
+
+        public async ValueTask<string> GetWebsiteByProviderId(string providerId)
+        {
+            string password = string.Empty;
+            try
+            {
+                if (!string.IsNullOrEmpty(_token))
+                {
+                    using (var client = new HttpClient())
+                    {
+                        client.BaseAddress = new Uri(_urjanetDetails.BaseAddress);
+                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
+                        var result = await client.GetAsync($"apautomation/providers/{providerId}");
+                        string resultContent = await result.Content.ReadAsStringAsync();
+                        result.EnsureSuccessStatusCode();
+                        var urjanetCredentialsResponse = JsonConvert.DeserializeObject<UrjanetProviderResponse>(resultContent);
+                        password = urjanetCredentialsResponse?.Website;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            return password;
+        }
+
+        public async ValueTask<AccountsResponse> GetAllAccounts(string accountId)
+        {
+            AccountsResponse accountsResponse = new AccountsResponse();
+            try
+            {
+                if (!string.IsNullOrEmpty(_token))
+                {
+                    using (var client = new HttpClient())
+                    {
+                        client.BaseAddress = new Uri(_urjanetDetails.BaseAddress);
+                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
+                        var result = await client.GetAsync($"apautomation/credentials/{accountId}/accounts?sort=status,desc&size=100&page=0");
+                        string resultContent = await result.Content.ReadAsStringAsync();
+                        result.EnsureSuccessStatusCode();
+                        accountsResponse = JsonConvert.DeserializeObject<AccountsResponse>(resultContent);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            return accountsResponse;
+        }
+        public async ValueTask<string> GetPasswordByPasswordId(string passwordId)
+        {
+            string password = string.Empty;
+            try
+            {
+                if (!string.IsNullOrEmpty(_token))
+                {
+                    using (var client = new HttpClient())
+                    {
+                        client.BaseAddress = new Uri(_urjanetDetails.BaseAddress);
+                        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _token);
+                        var result = await client.GetAsync($"apautomation/credentials/{passwordId}/passwords");
+                        string resultContent = await result.Content.ReadAsStringAsync();
+                        result.EnsureSuccessStatusCode();
+                        var urjanetCredentialsResponse = JsonConvert.DeserializeObject<UrjanetPasswordResponse>(resultContent);
+                        password = urjanetCredentialsResponse?.password;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            return password;
+        }
+
         public async ValueTask<DataTable> ReadFile(StatementResponse StatementResponse)
         {
             DataTable dt = new DataTable();
@@ -156,15 +258,15 @@ namespace Hoganvest.Core.Helpers
             return tokenResponse;
         }
 
-        public async ValueTask<bool> DownloadStatemet(string statementId, string fileName, string companyName)
+        public async ValueTask<bool> DownloadStatemet(string statementId, string fileName, string companyName, string folderName)
         {
             bool isdownloaded = false;
             try
             {
                 if (!string.IsNullOrEmpty(_token))
-                {
+                {  
                     statementId = statementId.Replace('"', ' ').Trim();
-                    string filePath = Path.Combine(_urjanetDetails.StatementPath, companyName, fileName + ".pdf");
+                    string filePath = Path.Combine(_urjanetDetails.StatementPath, companyName, folderName, fileName + ".pdf");
                     if (File.Exists(filePath))
                     {
                         Console.WriteLine("Statement - " + fileName + " already exists in - " + filePath);
@@ -172,6 +274,8 @@ namespace Hoganvest.Core.Helpers
                     }
                     else
                     {
+                        if (!Directory.Exists(Path.Combine(_urjanetDetails.StatementPath, companyName, folderName)))
+                            Directory.CreateDirectory(Path.Combine(_urjanetDetails.StatementPath, companyName, folderName));
                         Console.WriteLine("Downloading statement for statementid - " + statementId + " started");
                         using (var client = new HttpClient())
                         {

@@ -7,5 +7,6 @@ namespace Hoganvest.Business.Interfaces
     {
         ValueTask<Response> AddStatement(string token, string[] args);
         ValueTask<string> getToken();
+        ValueTask<Response> GetAllCredentials(string token);
     }
 }

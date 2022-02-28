@@ -8,5 +8,7 @@ namespace Hoganvest.Data.Interfaces
     {
         Task<int> CommitAsync();
         IUrjanetStatementRepository UrjanetStatement { get; }
+        IUrjanetCredentialsRepository UrjanetCredentials { get; }
+        ICrdentialDetailsRepository CrdentialDetails { get; }
     }
 }
