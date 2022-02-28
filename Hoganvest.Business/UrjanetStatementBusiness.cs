@@ -225,91 +225,94 @@ namespace Hoganvest.Business
                 UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
                 int pageNumber = -1;
                 int totalCount = 0;
-                do
+                if (TruncateCredTables())
                 {
-                    pageNumber++;
-                    var urjanetCredentialsResponse = await urjanetHelper.GetAllCredentials(pageNumber);
-                    if (urjanetCredentialsResponse?._embedded?.credentials?.Count > 0)
+                    do
                     {
+                        pageNumber++;
+                        var urjanetCredentialsResponse = await urjanetHelper.GetAllCredentials(pageNumber);
+                        if (urjanetCredentialsResponse?._embedded?.credentials?.Count > 0)
                         {
-                            List<Credential> urjanetCredentials = new List<Credential>();
-                            totalCount = urjanetCredentialsResponse.page.totalPages;
-
-                            foreach (var item in urjanetCredentialsResponse._embedded.credentials)
                             {
-                                var urjanetCredential = _unitOfWork.UrjanetCredentials.SingleOrDefaultAsync(x => x.UserName == item.username && x.ProviderName == item.providerName).Result;
-                                var credentialId = 0;
-                                if (urjanetCredential == null)
+                                List<Credential> urjanetCredentials = new List<Credential>();
+                                totalCount = urjanetCredentialsResponse.page.totalPages;
+
+                                foreach (var item in urjanetCredentialsResponse._embedded.credentials)
                                 {
-                                    string website = string.Empty, password = string.Empty;
-                                    if (!string.IsNullOrEmpty(item._links.provider.href) && !string.IsNullOrEmpty(item._links.provider.href.Split("providers/")[1]))
+                                    var urjanetCredential = _unitOfWork.UrjanetCredentials.SingleOrDefaultAsync(x => x.UserName == item.username && x.ProviderName == item.providerName).Result;
+                                    var credentialId = 0;
+                                    if (urjanetCredential == null)
                                     {
-                                        website = await urjanetHelper.GetWebsiteByProviderId(item._links.provider.href.Split("providers/")[1]);
-                                    }
-                                    if (!string.IsNullOrEmpty(item._links.passwords.href) && !string.IsNullOrEmpty(item._links.passwords.href.Split("credentials/")[1]))
-                                    {
-                                        string passwordId = item._links.passwords.href.Split("credentials/")[1];
-                                        password = await urjanetHelper.GetPasswordByPasswordId(passwordId.Split("/passwords")[0]);
-                                    }
-                                    Credential credential = new Credential()
-                                    {
-                                        UserName = item.username,
-                                        CorrelationId = item.correlationId,
-                                        Status = item.status,
-                                        StatusDetail = item.statusDetail,
-                                        Enabled = item.enabled,
-                                        Password = password,
-                                        Website = website,
-                                        ProviderName = item.providerName,
-                                        LastModified = item.lastModified,
-                                        Created = item.created,
-                                        CreatedBy = item.createdBy,
-                                        LastModifiedBy = item.lastModifiedBy,
-                                        RunHistory = item.runHistory,
-                                        Mock = item.mock,
-                                    };
-                                    await _unitOfWork.UrjanetCredentials.AddAsync(credential);
-                                    await _unitOfWork.CommitAsync();
-                                    credentialId = credential.CrdentialId;
-                                    if (credentialId > 0)
-                                    {
+                                        string website = string.Empty, password = string.Empty;
+                                        if (!string.IsNullOrEmpty(item._links.provider.href) && !string.IsNullOrEmpty(item._links.provider.href.Split("providers/")[1]))
+                                        {
+                                            website = await urjanetHelper.GetWebsiteByProviderId(item._links.provider.href.Split("providers/")[1]);
+                                        }
                                         if (!string.IsNullOrEmpty(item._links.passwords.href) && !string.IsNullOrEmpty(item._links.passwords.href.Split("credentials/")[1]))
                                         {
-                                            string accountId = item._links.passwords.href.Split("credentials/")[1];
-                                            var accountsResponse = await urjanetHelper.GetAllAccounts(accountId.Split("/passwords")[0]);
-                                            if (accountsResponse?._embedded?.accounts?.Count > 0)
+                                            string passwordId = item._links.passwords.href.Split("credentials/")[1];
+                                            password = await urjanetHelper.GetPasswordByPasswordId(passwordId.Split("/passwords")[0]);
+                                        }
+                                        Credential credential = new Credential()
+                                        {
+                                            UserName = item.username,
+                                            CorrelationId = item.correlationId,
+                                            Status = item.status,
+                                            StatusDetail = item.statusDetail,
+                                            Enabled = item.enabled,
+                                            Password = password,
+                                            Website = website,
+                                            ProviderName = item.providerName,
+                                            LastModified = item.lastModified,
+                                            Created = item.created,
+                                            CreatedBy = item.createdBy,
+                                            LastModifiedBy = item.lastModifiedBy,
+                                            RunHistory = item.runHistory,
+                                            Mock = item.mock,
+                                        };
+                                        await _unitOfWork.UrjanetCredentials.AddAsync(credential);
+                                        await _unitOfWork.CommitAsync();
+                                        credentialId = credential.CrdentialId;
+                                        if (credentialId > 0)
+                                        {
+                                            if (!string.IsNullOrEmpty(item._links.passwords.href) && !string.IsNullOrEmpty(item._links.passwords.href.Split("credentials/")[1]))
                                             {
-                                                List<CrdentialDetails> crdentialDetails = new List<CrdentialDetails>();
-                                                foreach (var account in accountsResponse?._embedded?.accounts)
+                                                string accountId = item._links.passwords.href.Split("credentials/")[1];
+                                                var accountsResponse = await urjanetHelper.GetAllAccounts(accountId.Split("/passwords")[0]);
+                                                if (accountsResponse?._embedded?.accounts?.Count > 0)
                                                 {
-                                                    var CrdentialDetails = _unitOfWork.CrdentialDetails.SingleOrDefaultAsync(x => x.AccountNumber == account.accountNumber && x.PropertyId == account._embedded.customData.PropertyID && x.CrdentialId == credentialId).Result;
-                                                    if (CrdentialDetails == null)
+                                                    List<CrdentialDetails> crdentialDetails = new List<CrdentialDetails>();
+                                                    foreach (var account in accountsResponse?._embedded?.accounts)
                                                     {
-                                                        crdentialDetails.Add(new CrdentialDetails()
+                                                        var CrdentialDetails = _unitOfWork.CrdentialDetails.SingleOrDefaultAsync(x => x.AccountNumber == account.accountNumber && x.PropertyId == account._embedded.customData.PropertyID && x.CrdentialId == credentialId).Result;
+                                                        if (CrdentialDetails == null)
                                                         {
-                                                            AccountNumber = account.accountNumber,
-                                                            CrdentialId = credentialId,
-                                                            AccountStatus = account.status,
-                                                            PropertyId = account._embedded.customData.PropertyID
-                                                        });
+                                                            crdentialDetails.Add(new CrdentialDetails()
+                                                            {
+                                                                AccountNumber = account.accountNumber,
+                                                                CrdentialId = credentialId,
+                                                                AccountStatus = account.status,
+                                                                PropertyId = account._embedded.customData.PropertyID
+                                                            });
+                                                        }
                                                     }
-                                                }
-                                                if (crdentialDetails.Count > 0)
-                                                {
-                                                    await _unitOfWork.CrdentialDetails.AddRangeAsync(crdentialDetails);
-                                                    await _unitOfWork.CommitAsync();
+                                                    if (crdentialDetails.Count > 0)
+                                                    {
+                                                        await _unitOfWork.CrdentialDetails.AddRangeAsync(crdentialDetails);
+                                                        await _unitOfWork.CommitAsync();
+                                                    }
                                                 }
                                             }
                                         }
                                     }
+                                    //else
+                                    //    credentialId = urjanetCredential.CrdentialId;
+
                                 }
-                                //else
-                                //    credentialId = urjanetCredential.CrdentialId;
-                               
                             }
                         }
-                    }
-                } while (pageNumber < totalCount);
+                    } while (pageNumber < totalCount);
+                }
             }
             catch (Exception ex)
             {
@@ -342,6 +345,26 @@ namespace Hoganvest.Business
         }
 
         #region Private Methods
+
+        private bool TruncateCredTables()
+        {
+            try
+            {
+                string csDestination = _connectionStrings.HoganvestDBString;
+                using (var sqlConnection = new SqlConnection(csDestination))
+                {
+                    sqlConnection.Open();
+                    SqlCommand command = new SqlCommand("truncate table CrdentialDetails;delete from Credential;DBCC CHECKIDENT(Credential, RESEED, 0)", sqlConnection);
+                    command.ExecuteNonQuery();
+                    sqlConnection.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return true;
+        }
         private DataTable CheckEachStatementExistsInDB(DataTable dt)
         {
             DataTable res = new DataTable();
