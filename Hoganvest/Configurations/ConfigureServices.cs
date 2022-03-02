@@ -79,8 +79,14 @@ namespace Hoganvest.App.Configurations
                 _token = await urjanetStatementBusiness.getToken();
                 if (!string.IsNullOrEmpty(_token))
                 {
-                    await urjanetStatementBusiness.GetAllCredentials(_token);
+
                     await urjanetStatementBusiness.AddStatement(_token, args);
+
+                    Console.WriteLine("Started Fetching Credentials...");
+                    Log.Information("Started Fetching Credentials...");
+                    await urjanetStatementBusiness.GetAllCredentials(_token);
+                    Console.WriteLine("Completed Fetching Credentials...");
+                    Log.Information("Completed Fetching Credentials...");
                 }
             }
             catch (Exception ex)

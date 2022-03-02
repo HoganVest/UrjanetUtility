@@ -2,7 +2,7 @@
 
 namespace Hoganvest.Data.Interfaces
 {
-    public interface ICrdentialDetailsRepository : IRepository<CrdentialDetails>
+    public interface ICredentialDetailsRepository : IRepository<CredentialDetails>
     {
     }
 }

@@ -4,9 +4,9 @@ using Hoganvest.Data.Repository.Models;
 
 namespace Hoganvest.Data.Repository
 {
-   public class CrdentialDetailsRepository : Repository<CrdentialDetails>, ICrdentialDetailsRepository
+   public class CredentialDetailsRepository : Repository<CredentialDetails>, ICredentialDetailsRepository
     {
-        public CrdentialDetailsRepository(HoganvestContext context)
+        public CredentialDetailsRepository(HoganvestContext context)
            : base(context)
         { }
     }

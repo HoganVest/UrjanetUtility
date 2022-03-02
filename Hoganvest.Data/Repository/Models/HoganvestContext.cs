@@ -13,7 +13,7 @@ namespace Hoganvest.Data.Repository.Models
         {
         }
 
-        public virtual DbSet<CrdentialDetails> CrdentialDetails { get; set; }
+        public virtual DbSet<CredentialDetails> CredentialDetails { get; set; }
         public virtual DbSet<Credential> Credential { get; set; }
         public virtual DbSet<UrjanetStatements> UrjanetStatements { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -21,17 +21,17 @@ namespace Hoganvest.Data.Repository.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseSqlServer("Server=192.168.19.145;Database=Hoganvest;integrated security=false;user id=sa;password=CT!@#QWE123");
+                optionsBuilder.UseSqlServer("Server=SQLDB-01; Database =Urjanet; User Id=sa; Password=Phx0ff!c@structureproperties;");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 
-            modelBuilder.Entity<CrdentialDetails>(entity =>
+            modelBuilder.Entity<CredentialDetails>(entity =>
             {
-                entity.HasKey(e => e.CreentialDetailsId)
-                    .HasName("PK__Crdentia__1B4D67B5CA456128");
+                entity.HasKey(e => e.CredentialDetailsId)
+                    .HasName("PK__Credentia__1B4D67B5CA456128");
 
                 entity.Property(e => e.AccountNumber)
                     .HasColumnName("Account Number")
@@ -43,15 +43,15 @@ namespace Hoganvest.Data.Repository.Models
 
                 entity.Property(e => e.PropertyId).HasMaxLength(100);
 
-                entity.HasOne(d => d.Crdential)
-                    .WithMany(p => p.CrdentialDetails)
-                    .HasForeignKey(d => d.CrdentialId)
-                    .HasConstraintName("FK__Crdential__Crden__4BAC3F29");
+                entity.HasOne(d => d.Credential)
+                    .WithMany(p => p.CredentialDetails)
+                    .HasForeignKey(d => d.CredentialId)
+                    .HasConstraintName("FK__Credential__Crden__4BAC3F29");
             });
 
             modelBuilder.Entity<Credential>(entity =>
             {
-                entity.HasKey(e => e.CrdentialId)
+                entity.HasKey(e => e.CredentialId)
                     .HasName("PK_UrjanetCredentials");
 
                 entity.Property(e => e.CorrelationId).HasMaxLength(100);
@@ -85,157 +85,157 @@ namespace Hoganvest.Data.Repository.Models
                     .HasName("PK__UrjanetS__2F4FA634F7E25425");
 
                 entity.Property(e => e.LogicalAccountId)
-                    .HasColumnName("Logical Account Id")
+                    .HasColumnName("Logical_Account_Id")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.AccountType)
-                    .HasColumnName("Account Type")
+                    .HasColumnName("Account_Type")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.BillingCity)
-                    .HasColumnName("Billing City")
+                    .HasColumnName("Billing_City")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.BillingRecipientName)
-                    .HasColumnName("Billing Recipient Name")
+                    .HasColumnName("Billing_Recipient_Name")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.BillingState)
-                    .HasColumnName("Billing State")
+                    .HasColumnName("Billing_State")
                     .HasMaxLength(10);
 
                 entity.Property(e => e.BillingStreet)
-                    .HasColumnName("Billing Street")
+                    .HasColumnName("Billing_Street")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.BillingStreet2)
-                    .HasColumnName("Billing Street 2")
+                    .HasColumnName("Billing_Street_2")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.BillingZipCode)
-                    .HasColumnName("Billing Zip Code")
+                    .HasColumnName("Billing_Zip_Code")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.CorrelationId)
-                    .HasColumnName("Correlation Id")
+                    .HasColumnName("Correlation_Id")
                     .HasMaxLength(50);
 
-                entity.Property(e => e.CurrentCharges).HasColumnName("Current Charges");
+                entity.Property(e => e.CurrentCharges).HasColumnName("Current_Charges");
 
                 entity.Property(e => e.DueDate)
-                    .HasColumnName("Due Date")
+                    .HasColumnName("Due_Date")
                     .HasColumnType("datetime");
 
                 entity.Property(e => e.EndDate)
-                    .HasColumnName("End Date")
+                    .HasColumnName("End_Date")
                     .HasColumnType("datetime");
 
                 entity.Property(e => e.InvoiceNumber)
-                    .HasColumnName("Invoice Number")
+                    .HasColumnName("Invoice_Number")
                     .HasMaxLength(50);
 
-                entity.Property(e => e.NormalizedAccountNumber).HasColumnName("Normalized Account Number");
+                entity.Property(e => e.NormalizedAccountNumber).HasColumnName("Normalized_Account_Number");
 
-                entity.Property(e => e.OutstandingBalance).HasColumnName("Outstanding Balance");
+                entity.Property(e => e.OutstandingBalance).HasColumnName("Outstanding_Balance");
 
                 entity.Property(e => e.PaymentCity)
-                    .HasColumnName("Payment City")
+                    .HasColumnName("Payment_City")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.PaymentCurrency)
-                    .HasColumnName("Payment Currency")
+                    .HasColumnName("Payment_Currency")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.PaymentRecipientName)
-                    .HasColumnName("Payment Recipient Name")
+                    .HasColumnName("Payment_Recipient_Name")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.PaymentState)
-                    .HasColumnName("Payment State")
+                    .HasColumnName("Payment_State")
                     .HasMaxLength(10);
 
                 entity.Property(e => e.PaymentStreet)
-                    .HasColumnName("Payment Street")
+                    .HasColumnName("Payment_Street")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.PaymentStreet2)
-                    .HasColumnName("Payment Street 2")
+                    .HasColumnName("Payment_Street_2")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.PaymentZipCode)
-                    .HasColumnName("Payment Zip Code")
+                    .HasColumnName("Payment_Zip_Code")
                     .HasMaxLength(50);
 
-                entity.Property(e => e.PreviousCharges).HasColumnName("Previous Charges");
+                entity.Property(e => e.PreviousCharges).HasColumnName("Previous_Charges");
 
                 entity.Property(e => e.PropertyId).HasColumnName("PropertyID");
 
                 entity.Property(e => e.ProviderName)
-                    .HasColumnName("Provider Name")
+                    .HasColumnName("Provider_Name")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.RawAccountNumber)
-                    .HasColumnName("Raw Account Number")
+                    .HasColumnName("Raw_Account_Number")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.RawBillingAddress)
-                    .HasColumnName("Raw Billing Address")
+                    .HasColumnName("Raw_Billing_Address")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.RawPaymentAddress)
-                    .HasColumnName("Raw Payment Address")
+                    .HasColumnName("Raw_Payment_Address")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.RawServiceAddress)
-                    .HasColumnName("Raw Service Address")
+                    .HasColumnName("Raw_Service_Address")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.ServiceCity)
-                    .HasColumnName("Service City")
+                    .HasColumnName("Service_City")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.ServiceRecipientName)
-                    .HasColumnName("Service Recipient Name")
+                    .HasColumnName("Service_Recipient_Name")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.ServiceState)
-                    .HasColumnName("Service State")
+                    .HasColumnName("Service_State")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.ServiceStreet)
-                    .HasColumnName("Service Street")
+                    .HasColumnName("Service_Street")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.ServiceStreet2)
-                    .HasColumnName("Service Street 2")
+                    .HasColumnName("Service_Street_2")
                     .HasMaxLength(50);
 
-                entity.Property(e => e.ServiceZipCode).HasColumnName("Service Zip Code");
+                entity.Property(e => e.ServiceZipCode).HasColumnName("Service_Zip_Code");
 
                 entity.Property(e => e.StartDate)
-                    .HasColumnName("Start Date")
+                    .HasColumnName("Start_Date")
                     .HasColumnType("datetime");
 
                 entity.Property(e => e.StatementDate)
-                    .HasColumnName("Statement Date")
+                    .HasColumnName("Statement_Date")
                     .HasColumnType("datetime");
 
                 entity.Property(e => e.StatementId)
-                    .HasColumnName("Statement Id")
+                    .HasColumnName("Statement_Id")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.StatementType)
-                    .HasColumnName("Statement Type")
+                    .HasColumnName("Statement_Type")
                     .HasMaxLength(50);
 
                 entity.Property(e => e.SummaryAccountNumber)
-                    .HasColumnName("Summary Account Number")
+                    .HasColumnName("Summary_Account_Number")
                     .HasMaxLength(50);
 
-                entity.Property(e => e.TotalDue).HasColumnName("Total Due");
+                entity.Property(e => e.TotalDue).HasColumnName("Total_Due");
 
                 entity.Property(e => e.UtilityProviderId)
-                    .HasColumnName("Utility Provider Id")
+                    .HasColumnName("Utility_Provider_Id")
                     .HasMaxLength(50);
             });
 

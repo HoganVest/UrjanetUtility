@@ -11,7 +11,7 @@ namespace Hoganvest.Data.Repository.Base
         private HoganvestContext _context;
         private UrjanetStatementRepository _urjanetStatementRepository;
         private UrjanetCredentialsRepository _urjanetCredentialsRepository;
-        private CrdentialDetailsRepository _crdentialDetailsRepository;
+        private CredentialDetailsRepository _credentialDetailsRepository;
         #endregion Private Variables
 
         public UnitOfWork(HoganvestContext context)
@@ -21,7 +21,7 @@ namespace Hoganvest.Data.Repository.Base
         public IUrjanetStatementRepository UrjanetStatement => _urjanetStatementRepository = _urjanetStatementRepository ?? new UrjanetStatementRepository(_context);
 
         public IUrjanetCredentialsRepository UrjanetCredentials => _urjanetCredentialsRepository = _urjanetCredentialsRepository ?? new UrjanetCredentialsRepository(_context);
-        public ICrdentialDetailsRepository CrdentialDetails => _crdentialDetailsRepository = _crdentialDetailsRepository ?? new CrdentialDetailsRepository(_context);
+        public ICredentialDetailsRepository CredentialDetails => _credentialDetailsRepository = _credentialDetailsRepository ?? new CredentialDetailsRepository(_context);
         #region Base Methods
         public async Task<int> CommitAsync()
         {

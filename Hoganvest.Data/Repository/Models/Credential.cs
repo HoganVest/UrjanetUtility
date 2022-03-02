@@ -7,10 +7,10 @@ namespace Hoganvest.Data.Repository.Models
     {
         public Credential()
         {
-            CrdentialDetails = new HashSet<CrdentialDetails>();
+            CredentialDetails = new HashSet<CredentialDetails>();
         }
 
-        public int CrdentialId { get; set; }
+        public int CredentialId { get; set; }
         public string UserName { get; set; }
         public string CorrelationId { get; set; }
         public string Status { get; set; }
@@ -26,6 +26,6 @@ namespace Hoganvest.Data.Repository.Models
         public string Password { get; set; }
         public string Website { get; set; }
 
-        public virtual ICollection<CrdentialDetails> CrdentialDetails { get; set; }
+        public virtual ICollection<CredentialDetails> CredentialDetails { get; set; }
     }
 }

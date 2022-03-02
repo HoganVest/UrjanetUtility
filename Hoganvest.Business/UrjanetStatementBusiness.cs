@@ -80,8 +80,16 @@ namespace Hoganvest.Business
                 List<PropertyDirectory> propertyDirectories = new List<PropertyDirectory>();
                 foreach (DataRow row in dt.Rows)
                 {
-                    DateTime dueDate = Convert.ToDateTime(row["\"Due_Date\""]);
-                    string folderName = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(dueDate.Month) + " " + dueDate.Year.ToString();
+                    DateTime dueorstatementDate;
+                    if (row["\"Due_Date\""] is DBNull)
+                    {
+                        dueorstatementDate = Convert.ToDateTime(row["\"Statement_Date\""]);
+                    }
+                    else
+                    {
+                        dueorstatementDate = Convert.ToDateTime(row["\"Due_Date\""]);
+                    }
+                    string folderName = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(dueorstatementDate.Month) + " " + dueorstatementDate.Year.ToString();
                     foreach (DataColumn col in dt.Columns)
                     {
                         if (row[dt.Columns["\"Correlation_Id\""]].ToString().ToLower() == "structure")
@@ -163,9 +171,9 @@ namespace Hoganvest.Business
                         }
                     }
                 }
-                Console.WriteLine("Uploaded " + hoganvestStatementsUploadCount + " hoganvest statements to google drive folder");
-                Console.WriteLine("Uploaded " + structureStatementsUploadCount + " structure statements to google drive folder");
-                Console.WriteLine("Uploaded " + localFilesDownloadCount + " statements to local file system");
+                Console.WriteLine("Downloaded " + hoganvestStatementsUploadCount + " hoganvest statements");
+                Console.WriteLine("Downloaded " + structureStatementsUploadCount + " structure statements");
+                Console.WriteLine("Downloaded " + localFilesDownloadCount + " Default statements");
                 response.IsSuccess = true;
             }
             catch (Exception ex)
@@ -225,8 +233,8 @@ namespace Hoganvest.Business
                 UrjanetHelper urjanetHelper = new UrjanetHelper(_urjanetDetails, token);
                 int pageNumber = -1;
                 int totalCount = 0;
-                if (TruncateCredTables())
-                {
+               // if (TruncateCredTables())
+                //{
                     do
                     {
                         pageNumber++;
@@ -272,7 +280,7 @@ namespace Hoganvest.Business
                                         };
                                         await _unitOfWork.UrjanetCredentials.AddAsync(credential);
                                         await _unitOfWork.CommitAsync();
-                                        credentialId = credential.CrdentialId;
+                                        credentialId = credential.CredentialId;
                                         if (credentialId > 0)
                                         {
                                             if (!string.IsNullOrEmpty(item._links.passwords.href) && !string.IsNullOrEmpty(item._links.passwords.href.Split("credentials/")[1]))
@@ -281,38 +289,35 @@ namespace Hoganvest.Business
                                                 var accountsResponse = await urjanetHelper.GetAllAccounts(accountId.Split("/passwords")[0]);
                                                 if (accountsResponse?._embedded?.accounts?.Count > 0)
                                                 {
-                                                    List<CrdentialDetails> crdentialDetails = new List<CrdentialDetails>();
+                                                    List<CredentialDetails> credentialDetails = new List<CredentialDetails>();
                                                     foreach (var account in accountsResponse?._embedded?.accounts)
                                                     {
-                                                        var CrdentialDetails = _unitOfWork.CrdentialDetails.SingleOrDefaultAsync(x => x.AccountNumber == account.accountNumber && x.PropertyId == account._embedded.customData.PropertyID && x.CrdentialId == credentialId).Result;
-                                                        if (CrdentialDetails == null)
+                                                        var CredentialDetails = _unitOfWork.CredentialDetails.SingleOrDefaultAsync(x => x.AccountNumber == account.accountNumber && x.PropertyId == account._embedded.customData.PropertyID && x.CredentialId == credentialId).Result;
+                                                        if (CredentialDetails == null)
                                                         {
-                                                            crdentialDetails.Add(new CrdentialDetails()
+                                                            credentialDetails.Add(new CredentialDetails()
                                                             {
                                                                 AccountNumber = account.accountNumber,
-                                                                CrdentialId = credentialId,
+                                                                CredentialId = credentialId,
                                                                 AccountStatus = account.status,
                                                                 PropertyId = account._embedded.customData.PropertyID
                                                             });
                                                         }
                                                     }
-                                                    if (crdentialDetails.Count > 0)
+                                                    if (credentialDetails.Count > 0)
                                                     {
-                                                        await _unitOfWork.CrdentialDetails.AddRangeAsync(crdentialDetails);
+                                                        await _unitOfWork.CredentialDetails.AddRangeAsync(credentialDetails);
                                                         await _unitOfWork.CommitAsync();
                                                     }
                                                 }
                                             }
                                         }
                                     }
-                                    //else
-                                    //    credentialId = urjanetCredential.CrdentialId;
-
                                 }
                             }
                         }
                     } while (pageNumber < totalCount);
-                }
+                //}
             }
             catch (Exception ex)
             {
@@ -354,7 +359,7 @@ namespace Hoganvest.Business
                 using (var sqlConnection = new SqlConnection(csDestination))
                 {
                     sqlConnection.Open();
-                    SqlCommand command = new SqlCommand("truncate table CrdentialDetails;delete from Credential;DBCC CHECKIDENT(Credential, RESEED, 0)", sqlConnection);
+                    SqlCommand command = new SqlCommand("truncate table CredentialDetails;delete from Credential;DBCC CHECKIDENT(Credential, RESEED, 0)", sqlConnection);
                     command.ExecuteNonQuery();
                     sqlConnection.Close();
                 }
@@ -388,7 +393,7 @@ namespace Hoganvest.Business
                     {
                         if (!string.IsNullOrEmpty(row["\"Statement_Id\""].ToString()))
                         {
-                            DataRow[] dr = dbTable.Select("[Statement Id] ='" + row["\"Statement_Id\""].ToString() + "'");
+                            DataRow[] dr = dbTable.Select("[Statement_Id] ='" + row["\"Statement_Id\""].ToString() + "'");
                             if (dr.Length == 0)
                             {
                                 res.Rows.Add(row.ItemArray);
@@ -578,13 +583,31 @@ namespace Hoganvest.Business
                 //    propertyName = propertyName.Replace("/", " ") + delimeter;
                 string providerName = dataRow["\"Provider_Name\""].ToString() + delimeter;
                 string rawAccountNumber = dataRow["\"Raw_Account_Number\""].ToString();
-                rawAccountNumber = rawAccountNumber.Replace("-", "").Replace(" ","") + delimeter;
-                DateTime dueDate = Convert.ToDateTime(dataRow["\"Due_Date\""]);
-                string dueMonth = dueDate.ToString("MM") + delimeter;
-                string dueYear = dueDate.ToString("yy");
+                rawAccountNumber = rawAccountNumber.Replace("-", "").Replace(" ", "") + delimeter;
+                DateTime dueorstatementDate;
+                bool IsDueDateNull = false;
+                if (dataRow["\"Due_Date\""] is DBNull)
+                {
+                    dueorstatementDate = Convert.ToDateTime(dataRow["\"Statement_Date\""]);
+                    IsDueDateNull = true;
+                }
+                else
+                {
+                    dueorstatementDate = Convert.ToDateTime(dataRow["\"Due_Date\""]);
+                }
+                string dueMonth = dueorstatementDate.ToString("MM") + delimeter;
+                string dueYear = dueorstatementDate.ToString("yy");
                 string amount = dataRow["\"Total_due\""].ToString() + delimeter;
                 //fileName = propertyName + statementMonth + statementyear + providerName + rawAccountNumber + amount;
-                fileName =  providerName + rawAccountNumber + amount + dueMonth + dueYear;
+                if (IsDueDateNull)
+                {
+                    fileName = providerName + rawAccountNumber + amount + "StatementDate_" + dueMonth + dueYear;
+                }
+                else
+                {
+                    fileName = providerName + rawAccountNumber + amount + dueMonth + dueYear;
+                }
+
             }
             catch (Exception ex)
             {
