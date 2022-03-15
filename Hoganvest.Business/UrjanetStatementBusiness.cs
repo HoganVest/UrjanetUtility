@@ -76,8 +76,8 @@ namespace Hoganvest.Business
             {
                 int i = dt.Rows.Count;
                 int hoganvestStatementsUploadCount = 0, structureStatementsUploadCount = 0, localFilesDownloadCount = 0;
-                //List<PropertyDirectory> propertyDirectories = GetPropertyDirectories();
-                List<PropertyDirectory> propertyDirectories = new List<PropertyDirectory>();
+                List<PropertyDirectory> propertyDirectories = GetPropertyDirectories();
+                //List<PropertyDirectory> propertyDirectories = new List<PropertyDirectory>();
                 foreach (DataRow row in dt.Rows)
                 {
                     DateTime dueorstatementDate;
@@ -578,9 +578,9 @@ namespace Hoganvest.Business
             try
             {
                 string delimeter = "_";
-                //string propertyName = propertyDirectories.FirstOrDefault(i => i.PropertyId == Convert.ToInt32(dataRow["PropertyID"]))?.PropertyName;
-                //if (!string.IsNullOrEmpty(propertyName))
-                //    propertyName = propertyName.Replace("/", " ") + delimeter;
+                string propertyName = propertyDirectories.FirstOrDefault(i => i.PropertyId == Convert.ToInt32(dataRow["PropertyID"]))?.PropertyName;
+                if (!string.IsNullOrEmpty(propertyName))
+                    propertyName = propertyName.Replace("/", " ") + delimeter;
                 string providerName = dataRow["\"Provider_Name\""].ToString() + delimeter;
                 string rawAccountNumber = dataRow["\"Raw_Account_Number\""].ToString();
                 rawAccountNumber = rawAccountNumber.Replace("-", "").Replace(" ", "") + delimeter;
@@ -596,16 +596,17 @@ namespace Hoganvest.Business
                     dueorstatementDate = Convert.ToDateTime(dataRow["\"Due_Date\""]);
                 }
                 string dueMonth = dueorstatementDate.ToString("MM") + delimeter;
-                string dueYear = dueorstatementDate.ToString("yy");
+                string dueYear = dueorstatementDate.ToString("yy") + delimeter;
                 string amount = dataRow["\"Total_due\""].ToString() + delimeter;
                 //fileName = propertyName + statementMonth + statementyear + providerName + rawAccountNumber + amount;
                 if (IsDueDateNull)
                 {
-                    fileName = providerName + rawAccountNumber + amount + "StatementDate_" + dueMonth + dueYear;
+                    //fileName = providerName + rawAccountNumber + amount + "StatementDate_" + dueMonth + dueYear;
+                    fileName = propertyName + "StatementDate_" + dueMonth + dueYear + providerName + rawAccountNumber + amount;
                 }
                 else
                 {
-                    fileName = providerName + rawAccountNumber + amount + dueMonth + dueYear;
+                    fileName = propertyName + dueMonth + dueYear + providerName + rawAccountNumber + amount;
                 }
 
             }
